@@ -25,7 +25,6 @@ class SocialFeedControllerExtension extends DataExtension
 
 	public function SocialFeed()
 	{
-
 		$combinedData = $this->getProviderFeed(SocialFeedProviderInstagram::get()->filter('Enabled', 1));
 		$combinedData = $this->getProviderFeed(SocialFeedProviderFacebook::get()->filter('Enabled', 1), $combinedData);
 		$combinedData = $this->getProviderFeed(SocialFeedProviderTwitter::get()->filter('Enabled', 1), $combinedData);

@@ -10,6 +10,8 @@ use SilverStripe\ORM\ArrayList;
 use SilverStripe\ORM\Exception;
 use Psr\SimpleCache\CacheInterface;
 use SilverStripe\Core\Injector\Injector;
+use IsaacRankin\SocialFeed\SocialFeedCacheQueuedJob;
+use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
 
 class SocialFeedProvider extends DataObject
 {
@@ -61,12 +63,13 @@ class SocialFeedProvider extends DataObject
 	 */
 	public function getFeed() {
 		$feed = $this->getFeedCache();
+		$feed = false;
 		if (!$feed) {
 			$feed = $this->getFeedUncached();
 			$this->extend('updateFeedUncachedData', $feed);
 			$this->setFeedCache($feed);
-			if (class_exists('AbstractQueuedJob')) {
-				singleton('SocialFeedCacheQueuedJob')->createJob($this);
+			if (class_exists(AbstractQueuedJob::class)) {
+				singleton(SocialFeedCacheQueuedJob::class)->createJob($this);
 			}
 		}
 
@@ -134,7 +137,9 @@ class SocialFeedProvider extends DataObject
 	 */
 	public function getFeedCacheExpiry() {
 		$cache = $this->getCacheFactory();
+
 		$metadata = $cache->getMetadatas($this->ID);
+
 		if ($metadata && isset($metadata['expire'])) {
 			return $metadata['expire'];
 		}
@@ -162,7 +167,7 @@ class SocialFeedProvider extends DataObject
 	/**
 	 * @return Zend_Cache_Frontend_Output
 	 */
-	protected function getCacheFactory() {
+	public function getCacheFactory() {
 		$cache = Injector::inst()->get(CacheInterface::class . '.SocialFeedProvider');
 		return $cache;
 	}
