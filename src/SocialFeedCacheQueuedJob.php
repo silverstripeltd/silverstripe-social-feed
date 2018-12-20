@@ -4,7 +4,8 @@ namespace IsaacRankin\SocialFeed;
 
 use Symbiote\QueuedJobs\Services\AbstractQueuedJob;
 use SilverStripe\Core\Config\Config;
-
+use Symbiote\QueuedJobs\DataObjects\QueuedJobDescriptor;
+use Symbiote\QueuedJobs\Services\QueuedJobService;
 
 if (!class_exists('Symbiote\QueuedJobs\Services\AbstractQueuedJob')) {
 	return;
@@ -19,20 +20,29 @@ class SocialFeedCacheQueuedJob extends AbstractQueuedJob {
 	 */
 	private static $cache_time_offset = -300;
 
-	/**
-	 * Setup job that updates the feed cache 5 minutes before it expires so
-	 * the end-user doesn't experience page-load time slowdown.
-	 */
+
 	public function createJob($prov) {
-		$time = $prov->getFeedCacheExpiry();
-		$runDate = date('Y-m-d H:i:s', time());
-		if ($time) {
+		$cache = $prov->getCacheFactory();
+
+		$existing = QueuedJobDescriptor::get()->filter([
+			"Implementation" => SocialFeedCacheQueuedJob::class,
+			"JobStatus:not" => 'Complete'
+		])->sort('StartAfter DESC')->first();
+
+		if ($existing && $existing->ID > 0) {
+			/*
+			$runDate = $existing->StartAfter;
 			$timeOffset = intval(Config::inst()->get(__CLASS__, 'cache_time_offset'));
-			$time += $timeOffset;
-			$runDate = date('Y-m-d H:i:s', $time);
+			$runDate += $timeOffset;
+			$runDate = date('Y-m-d H:i:s', $runDate);
+			*/
+		} else {
+			$runDate = date('Y-m-d H:i:s', strtotime("+10 minutes"));
+			$class = get_class();
+			singleton(QueuedJobService::class)->queueJob(new $class($prov), $runDate);
 		}
-		$class = get_class();
-		singleton('QueuedJobService')->queueJob(new $class($prov), $runDate);
+
+
 	}
 
 	public function __construct($provider = null) {
@@ -76,10 +86,16 @@ class SocialFeedCacheQueuedJob extends AbstractQueuedJob {
 	 */
 	public function afterComplete() {
 		$prov = $this->getObject();
-		if ($prov)
-		{
+		if ($prov) {
 			// Create next job
 			singleton(__CLASS__)->createJob($prov);
 		}
+/*
+		$old = QueuedJobDescriptor::get()->filter([
+			"Implementation" => SocialFeedCacheQueuedJob::class,
+			"JobStatus" => 'Complete',
+			"RunAfter:LessThan" => date('Y-m-d H:i:s', strtotime("-2 days"))
+		])->sort('StartAfter DESC')->first();
+*/
 	}
 }
