@@ -48,9 +48,7 @@ class SocialFeedAdmin extends ModelAdmin
 	}
 
 
-
-
-
+/*
     public function getList()
     {
         $context = $this->getSearchContext();
@@ -74,12 +72,6 @@ class SocialFeedAdmin extends ModelAdmin
 
         return $list;
     }
-
-
-
-
-
-
-
+*/
 
 }
