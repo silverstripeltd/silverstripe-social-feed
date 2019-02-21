@@ -90,8 +90,6 @@ class SocialFeedProviderFacebook extends SocialFeedProvider implements SocialFee
 		// https://developers.facebook.com/docs/facebook-login/access-tokens#apptokens
 		$accessToken = ($this->AccessToken) ? $this->AccessToken : $this->siteConfig->SocialFeedFacebookAppID . '|' . $this->siteConfig->SocialFeedFacebookAppSecret;
 
-		$accessToken = 'no';
-
 		// Setup query params for FB query
 		$queryParameters = array(
 			// Get Facebook timestamps in Unix timestamp format
