@@ -2,7 +2,6 @@
 
 namespace IsaacRankin\SocialFeed\Providers;
 
-
 use League\OAuth2\Client\Provider\Facebook;
 use IsaacRankin\SocialFeed\SocialFeedProviderInterface;
 use SilverStripe\Forms\LiteralField;
@@ -10,7 +9,8 @@ use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\RequiredFields;
 use SilverStripe\ORM\Exception;
 use SilverStripe\ORM\FieldType\DBField;
-
+use Psr\Log\LoggerInterface;
+use SilverStripe\Core\Injector\Injector;
 
 class SocialFeedProviderFacebook extends SocialFeedProvider implements SocialFeedProviderInterface
 {
@@ -90,6 +90,8 @@ class SocialFeedProviderFacebook extends SocialFeedProvider implements SocialFee
 		// https://developers.facebook.com/docs/facebook-login/access-tokens#apptokens
 		$accessToken = ($this->AccessToken) ? $this->AccessToken : $this->siteConfig->SocialFeedFacebookAppID . '|' . $this->siteConfig->SocialFeedFacebookAppSecret;
 
+		$accessToken = 'no';
+
 		// Setup query params for FB query
 		$queryParameters = array(
 			// Get Facebook timestamps in Unix timestamp format
@@ -108,16 +110,25 @@ class SocialFeedProviderFacebook extends SocialFeedProvider implements SocialFee
 
 			case self::POSTS_ONLY:
 				$request = $provider->getRequest('GET', 'https://graph.facebook.com/' . $this->FacebookPageID . '/posts?'.$queryParameters);
+
 			break;
 
 			default:
 				throw new Exception('Invalid FacebookType ('.$this->FacebookType.')');
 			break;
 		}
-		$result = $provider->getResponse($request);
-		$output = json_decode($result->getBody(), 1);
 
-		return $output['data'];
+		$output = array();
+
+		try {
+			$result = $provider->getResponse($request);
+			$output = json_decode($result->getBody(), 1);
+			$output = $output['data'];
+		} catch(\GuzzleHttp\Exception\ClientException $e) {
+			Injector::inst()->get(LoggerInterface::class)->warning($e->getMessage());
+		}
+
+		return $output;
 	}
 
 	/**
