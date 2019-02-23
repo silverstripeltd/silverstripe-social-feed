@@ -63,7 +63,6 @@ class SocialFeedProvider extends DataObject
 	 */
 	public function getFeed() {
 		$feed = $this->getFeedCache();
-		$feed = false;
 		if (!$feed) {
 			$feed = $this->getFeedUncached();
 			$this->extend('updateFeedUncachedData', $feed);
